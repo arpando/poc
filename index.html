@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>Smadex Pixel POC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .success {
+            color: green;
+        }
+        .info {
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pixel PoC</h1>
+        
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+        <p><strong>Click ID:</strong> <span id="click-id-display">Not set</span></p>
+        
+        <hr>
+        
+        <h3>Simulate Page Visits:</h3>
+        <button onclick="simulatePageVisit('/landing?smx_click_id='+ crypto.randomUUID())">
+            Visit Landing Page (with click_id)
+        </button>
+        <button onclick="simulatePageVisit('/checkout')">
+            Visit Checkout Page
+        </button>
+        
+        <hr>
+        
+        <h3>Manual Event Tracking:</h3>
+        <button onclick="smx('track', 'purchase', {value: 99.99})">
+            Track Purchase
+        </button>
+        <button onclick="smx('track', 'add_to_cart')">
+            Track Add to Cart
+        </button>
+        
+        <div class="log" id="log">
+            <strong>Event Log:</strong>
+        </div>
+    </div>
+
+    <!-- Smadex Pixel Bootstrap Code -->
+    <script>
+    var SMADEX_TRACKING_GROUP = '115960';
+
+    !function(w,d){
+        // var t=["https://p.127-0-0-1.sslip.io/pixel.js"];
+        var t=['https://statics-staging.smadex.com/pixel-0.0.2.js'];
+        if(!w.smx){
+            var a=w.smx=function(){
+                a.performOperation?a.performOperation.apply(a,arguments):a.operationQueue.push(arguments);
+            };
+            a.operationQueue=[];
+            a.smxTrackGroupId=SMADEX_TRACKING_GROUP;
+            // a.baseUrl="https://t.127-0-0-1.sslip.io/hyperad/pixel-tracking";
+
+            for(var n=d.getElementsByTagName("script")[0],o=0;o<t.length;o++){
+                var i=d.createElement("script");
+                i.async=!0; // async loading to prevent blocking
+                i.src=t[o];
+                n.parentNode.insertBefore(i,n)
+            }
+        }
+    }(window,document);
+
+    smx('init');
+    
+    // Helper function for POC
+
+    function simulatePageVisit(path) {
+        // Change the URL
+        window.history.pushState({}, '', path);
+        
+        // Manually trigger the pixel logic
+        // Extract click_id from new URL
+        var params = new URLSearchParams(window.location.search);
+        var smxClickId = params.get('smx_click_id');
+        
+        // if (clickId) {
+        //     sessionStorage.setItem('smx_click_id', clickId);
+        // } else {
+        //     clickId = sessionStorage.getItem('smx_click_id');
+        // }
+        
+        // Find the matching event for current route
+        var route = window.location.pathname;
+        var routeMap = {
+            "/landing": "registration",
+            "/checkout": "visit"
+        };
+        var eventType = routeMap[route];
+        
+        // if (eventType && clickId) {
+        //     smx('track', eventType, {click_id: clickId});
+        // }
+
+        if (eventType) {
+            smx('track', eventType); 
+        }
+        
+        // Update display
+        document.getElementById('current-url').textContent = window.location.pathname + window.location.search;
+        document.getElementById('click-id-display').textContent = smxClickId || 'Not set';
+    }
+
+    </script>
+</body>
+</html>
